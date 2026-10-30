@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroSense IoT</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#eef1f6;color:#1e2532;display:flex;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+/* sidebar */
+.side{width:210px;background:#111827;color:#cbd5e1;padding:18px 14px;position:fixed;top:0;bottom:0;display:flex;flex-direction:column}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.orb{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#06b6d4);flex:none}
+.logo h1{font-size:15px;color:#fff;font-weight:700;line-height:1.2}
+.logo p{font-size:10px;color:#64748b}
+.navlbl{font-size:9px;letter-spacing:1.4px;color:#475569;margin:0 0 8px 6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{background:none;border:0;color:#94a3b8;font-size:13px;text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:9px;width:100%}
+.nav button:hover{background:#1e293b;color:#e2e8f0}
+.nav button.on{background:#1e40af;color:#fff;font-weight:600}
+.nav .ic{font-size:12px;width:14px}
+.devbox{margin-top:auto;background:#1e293b;border-radius:10px;padding:12px}
+.devbox .ln1{display:flex;align-items:center;gap:7px;font-size:11px;color:#4ade80;margin-bottom:7px}
+.devbox .ln1.off{color:#f87171}
+.pulse{width:7px;height:7px;border-radius:50%;background:#4ade80;animation:pl 2s infinite}
+.pulse.dead{background:#f87171;animation:none}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.3}}
+.devbox .nm{font-size:13px;font-weight:700;color:#fff}
+.devbox .sm{font-size:9px;color:#64748b;margin-top:3px;line-height:1.5}
+.devbox .sm a{color:#93c5fd}
+
+/* main */
+.main{margin-left:210px;flex:1;padding:26px 30px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;gap:16px;flex-wrap:wrap}
+.top h2{font-size:29px;font-weight:800;letter-spacing:-.7px}
+.top p{font-size:13px;color:#64748b;margin-top:3px}
+.btn{background:#2563eb;color:#fff;border:0;padding:9px 17px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-block}
+.btn:hover{background:#1d4ed8}
+.btn.g{background:#16a34a}.btn.g:hover{background:#15803d}
+.btn.w{background:#fff;color:#334155;border:1px solid #cbd5e1}
+.btn.w:hover{background:#f1f5f9}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+
+.page{display:none}.page.on{display:block}
+
+/* cards */
+.card{background:#fff;border-radius:15px;padding:19px;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(16,24,40,.07)}
+.blob{position:absolute;top:-32px;right:-32px;width:96px;height:96px;border-radius:50%;opacity:.34}
+.chip{width:33px;height:33px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-bottom:13px;position:relative}
+.mlbl{font-size:12px;color:#64748b;font-weight:700;letter-spacing:.4px;position:relative}
+.mval{font-size:31px;font-weight:800;margin:5px 0 10px;line-height:1;position:relative}
+.mval small{font-size:12px;color:#94a3b8;font-weight:600;margin-left:3px}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;position:relative}
+.tg{background:#dcfce7;color:#15803d}
+.ty{background:#fef3c7;color:#b45309}
+.tr{background:#fee2e2;color:#b91c1c}
+.tb{background:#dbeafe;color:#1d4ed8}
+.tn{background:#f1f5f9;color:#64748b}
+
+.g4{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:15px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:15px}
+.hero{display:grid;grid-template-columns:295px 1fr;gap:15px;margin-bottom:15px}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.side{width:64px;padding:14px 8px}
+.logo h1,.logo p,.navlbl,.devbox,.nav button span.tx{display:none}
+.nav button{justify-content:center}.main{margin-left:64px;padding:18px 16px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}}
+
+/* offline banner */
+.banner{display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:11px;padding:11px 15px;font-size:12.5px;font-weight:600;margin-bottom:15px}
+.banner.on{display:block}
+
+/* iaq hero */
+.iaq{background:linear-gradient(160deg,#1e3a8a,#0f172a);border-radius:15px;padding:24px;color:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.iaq .ttl{font-size:10px;letter-spacing:1.6px;color:#93c5fd;margin-bottom:16px}
+.iaq h3{font-size:23px;font-weight:800;margin-top:16px}
+.iaq .sub{font-size:11px;color:#94a3b8;margin-top:7px;line-height:1.6;max-width:230px}
+.iaq .pill{margin-top:14px;background:rgba(255,255,255,.12);border-radius:20px;padding:6px 15px;font-size:11px;font-weight:600}
+.ring{position:relative;width:150px;height:150px}
+.ring svg{transform:rotate(-90deg)}
+.ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .num{font-size:39px;font-weight:800;line-height:1}
+.ring .cap{font-size:10px;letter-spacing:2.4px;color:#93c5fd;margin-top:3px}
+
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:15px;margin-top:15px}
+.strip .card{padding:15px 18px}
+.slbl{font-size:9px;letter-spacing:1.3px;color:#94a3b8;font-weight:700}
+.sval{font-size:17px;font-weight:800;margin-top:5px}
+
+/* panel */
+.panel{background:#fff;border-radius:15px;padding:21px;box-shadow:0 1px 3px rgba(16,24,40,.07);margin-bottom:15px}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:17px;gap:14px;flex-wrap:wrap}
+.ph h4{font-size:16px;font-weight:800}
+.ph p{font-size:11.5px;color:#94a3b8;margin-top:2px}
+.segs{display:flex;gap:5px;flex-wrap:wrap}
+.seg{background:#f1f5f9;border:0;color:#64748b;font-size:11px;font-weight:700;padding:6px 12px;border-radius:16px;cursor:pointer;font-family:inherit}
+.seg.on{background:#2563eb;color:#fff}
+canvas{width:100%;height:250px;display:block}
+
+/* comfort */
+.cmf{display:grid;grid-template-columns:238px 1fr;gap:19px;align-items:center}
+@media(max-width:760px){.cmf{grid-template-columns:1fr}}
+.cmf .lft{text-align:center}
+.cmf h5{font-size:17px;font-weight:800;margin-top:12px}
+.cmf .note{font-size:11px;color:#94a3b8;margin-top:6px;line-height:1.6}
+.mini{background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:14px}
+.mini .k{font-size:9px;letter-spacing:1.2px;color:#94a3b8;font-weight:700}
+.mini .v{font-size:19px;font-weight:800;margin-top:5px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.g2{grid-template-columns:1fr}}
+
+/* table */
+.tw{overflow-x:auto;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-size:9.5px;letter-spacing:1.1px;color:#94a3b8;font-weight:700;padding:9px 11px;border-bottom:1px solid #eef2f7;white-space:nowrap}
+td{padding:11px;border-bottom:1px solid #f5f7fa;color:#334155;white-space:nowrap}
+tr:hover td{background:#f8fafc}
+.empty{text-align:center;color:#94a3b8;font-size:12.5px;padding:38px 12px}
+
+.ctrl{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px;background:#f8fafc;border:1px solid #eef2f7;border-radius:11px;padding:16px;margin-bottom:15px}
+.ctrl label{font-size:9.5px;letter-spacing:1.1px;color:#94a3b8;font-weight:700;display:block;margin-bottom:7px}
+select,input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1px solid #dbe2ea;border-radius:8px;font-size:12.5px;font-family:inherit;color:#1e2532;background:#fff}
+select:focus,input:focus{outline:2px solid #93c5fd;outline-offset:1px}
+
+/* alerts */
+.al{display:flex;gap:13px;align-items:flex-start;padding:15px;border-radius:11px;margin-bottom:11px;border:1px solid}
+.al .ai{width:31px;height:31px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex:none}
+.al .at{font-size:13.5px;font-weight:800}
+.al .ad{font-size:11.5px;color:#64748b;margin-top:3px;line-height:1.55}
+.al .ab{margin-left:auto;font-size:9.5px;font-weight:800;padding:4px 10px;border-radius:14px;flex:none}
+.aw{background:#fffbeb;border-color:#fde68a}.aw .ai{background:#fef3c7}.aw .ab{background:#fef3c7;color:#b45309}
+.ax{background:#fef2f2;border-color:#fecaca}.ax .ai{background:#fee2e2}.ax .ab{background:#fee2e2;color:#b91c1c}
+.ai_{background:#f8fafc;border-color:#e8edf3}.ai_ .ai{background:#e2e8f0}.ai_ .ab{background:#dbeafe;color:#1d4ed8}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+@media(max-width:880px){.split{grid-template-columns:1fr}}
+.thr{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.thr label{font-size:9.5px;letter-spacing:1.1px;color:#94a3b8;font-weight:700;display:block;margin-bottom:7px}
+
+/* api page */
+.code{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:12px/1.65 Consolas,'Courier New',monospace;overflow-x:auto;white-space:pre;margin-top:6px}
+.code .c{color:#64748b}
+.mth{display:inline-block;background:#dcfce7;color:#15803d;font-size:9.5px;font-weight:800;padding:3px 8px;border-radius:6px;margin-right:6px}
+td code{font:11.5px Consolas,'Courier New',monospace;color:#1d4ed8}
+.hint{font-size:11px;color:#94a3b8;margin-top:13px;line-height:1.6}
+.hint a{color:#2563eb;font-weight:600}
+</style>
+</head>
+<body>
+
+<nav class="side">
+  <div class="logo">
+    <div class="orb"></div>
+    <div><h1>AeroSense IoT</h1><p>PM &amp; air quality monitor</p></div>
+  </div>
+  <div class="navlbl">PAGES</div>
+  <div class="nav">
+    <button class="on" onclick="go('dash',this)"><span class="ic">&#9776;</span><span class="tx">Dashboard</span></button>
+    <button onclick="go('pm',this)"><span class="ic">&#9636;</span><span class="tx">PM &amp; Trend</span></button>
+    <button onclick="go('env',this)"><span class="ic">&#8595;</span><span class="tx">Environment</span></button>
+    <button onclick="go('hist',this)"><span class="ic">&#9679;</span><span class="tx">History</span></button>
+    <button onclick="go('alr',this)"><span class="ic">&#9888;</span><span class="tx">Alerts</span></button>
+    <button onclick="go('api',this)"><span class="ic">&#123;</span><span class="tx">API</span></button>
+  </div>
+  <div class="devbox">
+    <div class="ln1" id="conline"><span class="pulse" id="pulse"></span><span id="constat">Connecting...</span></div>
+    <div class="nm">AQ-MONITOR-01</div>
+    <div class="sm">ESP32 &middot; PMS7003 &middot; BME680<br>
+      Last upload: <span id="sideago">--</span><br>
+      <a href="https://thingspeak.com/channels/3462136" target="_blank" rel="noopener">ThingSpeak #3462136</a></div>
+  </div>
+</nav>
+
+<main class="main">
+
+<div class="banner" id="banner"></div>
+
+<!-- ============ DASHBOARD ============ -->
+<section class="page on" id="dash">
+  <div class="top">
+    <div><h2>PM &amp; Air Quality Monitoring</h2><p>Readings from the ESP32, delivered through the ThingSpeak cloud. Updates every 15 seconds.</p></div>
+    <button class="btn" onclick="pull()">Refresh data</button>
+  </div>
+
+  <div class="hero">
+    <div class="iaq">
+      <div class="ttl">INDOOR AIR QUALITY</div>
+      <div class="ring">
+        <svg width="150" height="150">
+          <circle cx="75" cy="75" r="63" stroke="rgba(255,255,255,.13)" stroke-width="12" fill="none"/>
+          <circle id="iaqarc" cx="75" cy="75" r="63" stroke="#fbbf24" stroke-width="12" fill="none"
+                  stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396"
+                  style="transition:stroke-dashoffset .7s ease,stroke .7s ease"/>
+        </svg>
+        <div class="ctr"><div class="num" id="iaqn">--</div><div class="cap">IAQ</div></div>
+      </div>
+      <h3 id="iaqword">Loading</h3>
+      <div class="sub">Estimated from BME680 gas resistance and humidity.</div>
+      <div class="pill">Current status: <span id="iaqpill">--</span></div>
+    </div>
+
+    <div class="g3">
+      <div class="card"><div class="blob" style="background:#fed7aa"></div>
+        <div class="chip" style="background:#ffedd5;color:#ea580c">&#8776;</div>
+        <div class="mlbl">PM2.5</div><div class="mval"><span id="pm25">--</span><small>&micro;g/m&sup3;</small></div>
+        <span class="tag tn" id="pm25t">No data</span></div>
+      <div class="card"><div class="blob" style="background:#fecaca"></div>
+        <div class="chip" style="background:#fee2e2;color:#dc2626">&#8776;</div>
+        <div class="mlbl">PM10</div><div class="mval"><span id="pm10">--</span><small>&micro;g/m&sup3;</small></div>
+        <span class="tag tn" id="pm10t">No data</span></div>
+
+      <div class="card"><div class="blob" style="background:#fed7aa"></div>
+        <div class="chip" style="background:#ffedd5;color:#ea580c">&deg;C</div>
+        <div class="mlbl">Temp</div><div class="mval"><span id="tmp">--</span><small>&deg;C</small></div>
+        <span class="tag tg" id="tmpt">--</span></div>
+      <div class="card"><div class="blob" style="background:#bbf7d0"></div>
+        <div class="chip" style="background:#dcfce7;color:#16a34a">%</div>
+        <div class="mlbl">Humidity</div><div class="mval"><span id="hum">--</span><small>%</small></div>
+        <span class="tag tg" id="humt">--</span></div>
+      <div class="card"><div class="blob" style="background:#bfdbfe"></div>
+        <div class="chip" style="background:#dbeafe;color:#2563eb">CO2</div>
+        <div class="mlbl">CO2 equivalent</div><div class="mval"><span id="co2">--</span><small>ppm</small></div>
+        <span class="tag tb">Estimated</span></div>
+      <div class="card"><div class="blob" style="background:#a5f3fc"></div>
+        <div class="chip" style="background:#cffafe;color:#0891b2">VOC</div>
+        <div class="mlbl">VOC equivalent</div><div class="mval"><span id="voc">--</span><small>ppm</small></div>
+        <span class="tag tb">Estimated</span></div>
+      <div class="card"><div class="blob" style="background:#ddd6fe"></div>
+        <div class="chip" style="background:#ede9fe;color:#7c3aed">&#8486;</div>
+        <div class="mlbl">Gas resistance</div><div class="mval"><span id="gas">--</span><small>k&Omega;</small></div>
+        <span class="tag tn">Measured</span></div>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="card"><div class="slbl">DEVICE</div><div class="sval" id="dstat">--</div></div>
+    <div class="card"><div class="slbl">PMS7003</div><div class="sval" id="pstat">--</div></div>
+    <div class="card"><div class="slbl">PRESSURE</div><div class="sval"><span id="pre">--</span> hPa</div></div>
+    <div class="card"><div class="slbl">LAST UPLOAD</div><div class="sval" id="lastup">--</div></div>
+  </div>
+</section>
+
+<!-- ============ PM & TREND ============ -->
+<section class="page" id="pm">
+  <div class="top">
+    <div><h2>PM &amp; Trend</h2><p>Particulate matter from the PMS7003 and the air quality trend.</p></div>
+    <button class="btn" onclick="pull()">Refresh data</button>
+  </div>
+
+  <div class="g3" style="margin-bottom:15px">
+    <div class="card" style="text-align:center"><div class="blob" style="background:#fed7aa"></div>
+      <div class="mlbl" style="font-size:13px">PM2.5</div>
+      <div style="font-size:41px;font-weight:800;margin:9px 0;position:relative"><span id="pm25b">--</span></div>
+      <div class="mlbl" style="font-size:11px;margin-bottom:9px">&micro;g/m&sup3;</div>
+      <span class="tag tn" id="pm25bt">No data</span></div>
+    <div class="card" style="text-align:center"><div class="blob" style="background:#fecaca"></div>
+      <div class="mlbl" style="font-size:13px">PM10</div>
+      <div style="font-size:41px;font-weight:800;margin:9px 0;position:relative"><span id="pm10b">--</span></div>
+      <div class="mlbl" style="font-size:11px;margin-bottom:9px">&micro;g/m&sup3;</div>
+      <span class="tag tn" id="pm10bt">No data</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div><h4>Air quality trend</h4><p>Gas resistance and estimated IAQ from the latest cloud uploads (one every ~20 s).</p></div>
+      <div class="segs">
+        <button class="seg on" onclick="setWin(60,this)">Last 60</button>
+        <button class="seg" onclick="setWin(150,this)">Last 150</button>
+        <button class="seg" onclick="setWin(400,this)">Last 400</button>
+      </div>
+    </div>
+    <canvas id="chart"></canvas>
+    <p class="hint">Green is gas resistance (k&Omega;, left scale), orange is estimated IAQ (0&ndash;500).</p>
+  </div>
+</section>
+
+<!-- ============ ENVIRONMENT ============ -->
+<section class="page" id="env">
+  <div class="top">
+    <div><h2>Environment</h2><p>BME680 readings and derived comfort values.</p></div>
+    <button class="btn" onclick="pull()">Refresh environment</button>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><div><h4>BME680 air quality data</h4><p>Temperature, humidity, pressure and estimated IAQ.</p></div></div>
+    <div class="g4">
+      <div class="card" style="background:#f8fafc;text-align:center"><div class="blob" style="background:#fed7aa"></div>
+        <div class="mlbl">Temperature</div>
+        <div style="font-size:29px;font-weight:800;margin:7px 0;position:relative"><span id="etmp">--</span><small style="font-size:13px;color:#94a3b8">&deg;C</small></div>
+        <span class="tag tg" id="etmpt">--</span></div>
+      <div class="card" style="background:#f8fafc;text-align:center"><div class="blob" style="background:#bbf7d0"></div>
+        <div class="mlbl">Humidity</div>
+        <div style="font-size:29px;font-weight:800;margin:7px 0;position:relative"><span id="ehum">--</span><small style="font-size:13px;color:#94a3b8">%</small></div>
+        <span class="tag tg" id="ehumt">--</span></div>
+      <div class="card" style="background:#f8fafc;text-align:center"><div class="blob" style="background:#bfdbfe"></div>
+        <div class="mlbl">Pressure</div>
+        <div style="font-size:29px;font-weight:800;margin:7px 0;position:relative"><span id="epre">--</span><small style="font-size:13px;color:#94a3b8">hPa</small></div>
+        <span class="tag tb" id="epret">--</span></div>
+      <div class="card" style="background:#f8fafc;text-align:center"><div class="blob" style="background:#ddd6fe"></div>
+        <div class="mlbl">IAQ (estimated)</div>
+        <div style="font-size:29px;font-weight:800;margin:7px 0;position:relative"><span id="eiaq">--</span></div>
+        <span class="tag ty" id="eiaqt">--</span></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="cmf">
+      <div class="lft">
+        <div class="ring" style="margin:0 auto">
+          <svg width="150" height="150">
+            <circle cx="75" cy="75" r="63" stroke="#eef2f7" stroke-width="12" fill="none"/>
+            <circle id="cmfarc" cx="75" cy="75" r="63" stroke="#16a34a" stroke-width="12" fill="none"
+                    stroke-linecap="round" stroke-dasharray="396" stroke-dashoffset="396"
+                    style="transition:stroke-dashoffset .7s ease,stroke .7s ease"/>
+          </svg>
+          <div class="ctr"><div class="num" style="font-size:33px;color:#1e2532" id="cmfn">--</div></div>
+        </div>
+        <h5 id="cmfw">Measuring</h5>
+        <div class="note">Comfort score from temperature and humidity against typical indoor ranges.</div>
+      </div>
+      <div>
+        <div class="g2" style="margin-bottom:12px">
+          <div class="mini"><div class="k">CO2 EQUIVALENT</div><div class="v"><span id="eco2">--</span> ppm</div></div>
+          <div class="mini"><div class="k">VOC EQUIVALENT</div><div class="v"><span id="evoc">--</span> ppm</div></div>
+        </div>
+        <div class="g2">
+          <div class="mini"><div class="k">CLOUD ENTRY</div><div class="v">#<span id="eid">--</span></div></div>
+          <div class="mini"><div class="k">LAST UPLOAD</div><div class="v" id="eago">--</div></div>
+        </div>
+        <p class="hint">
+          IAQ, CO2 and VOC are estimated on the ESP32 from gas resistance, not Bosch BSEC output.
+          Readings are less reliable in the first 5 minutes after the device powers on.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HISTORY ============ -->
+<section class="page" id="hist">
+  <div class="top">
+    <div><h2>History</h2><p>Every reading the device uploaded to the cloud, newest first.</p></div>
+    <div class="row">
+      <button class="btn g" onclick="exportCsv()">Export CSV</button>
+      <a class="btn w" href="https://api.thingspeak.com/channels/3462136/feeds.csv?results=8000" target="_blank" rel="noopener">Full history (CSV)</a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ctrl">
+      <div><label>RECORDS LOADED</label>
+        <div style="font-size:22px;font-weight:800;padding-top:3px" id="reccount">0</div></div>
+      <div><label>OLDEST LOADED</label>
+        <div style="font-size:14px;font-weight:700;padding-top:7px" id="oldest">--</div></div>
+      <div><label>FILE NAME</label>
+        <input type="text" id="fname" value="air_quality_log"></div>
+    </div>
+
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>TIME</th><th>ENTRY</th><th>PM2.5</th><th>PM10</th>
+          <th>TEMP</th><th>HUMIDITY</th><th>PRESSURE</th><th>IAQ</th><th>CO2</th><th>VOC</th><th>GAS</th>
+        </tr></thead>
+        <tbody id="logbody">
+          <tr><td colspan="11" class="empty">Loading readings from the cloud...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">
+      This table holds the last 400 uploads. Export CSV saves exactly these rows;
+      Full history downloads up to 8,000 rows straight from ThingSpeak.
+    </p>
+  </div>
+</section>
+
+<!-- ============ ALERTS ============ -->
+<section class="page" id="alr">
+  <div class="top">
+    <div><h2>Alerts &amp; settings</h2><p>Warnings raised from the latest reading, with thresholds you control.</p></div>
+    <button class="btn" onclick="saveThr()">Save thresholds</button>
+  </div>
+
+  <div class="g3" style="margin-bottom:15px">
+    <div class="card"><div class="slbl">ACTIVE ALERTS</div><div style="font-size:29px;font-weight:800;margin-top:6px" id="alcount">0</div></div>
+    <div class="card"><div class="slbl">HIGHEST LEVEL</div><div style="font-size:23px;font-weight:800;margin-top:8px" id="allevel">Normal</div></div>
+    <div class="card"><div class="slbl">LAST CHECK</div><div style="font-size:23px;font-weight:800;margin-top:8px" id="alcheck">--</div></div>
+  </div>
+
+  <div class="split">
+    <div class="panel">
+      <div class="ph"><div><h4>Air quality alerts</h4><p>Raised from IAQ, CO2, temperature, humidity, PM and device status.</p></div></div>
+      <div id="allist"></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div><h4>Threshold settings</h4><p>Change the values that decide when an alert appears.</p></div></div>
+      <div class="thr">
+        <div><label>PM2.5 WARNING</label><input type="number" id="t_pm25w" value="40"></div>
+        <div><label>PM2.5 DANGER</label><input type="number" id="t_pm25d" value="55"></div>
+        <div><label>PM10 WARNING</label><input type="number" id="t_pm10w" value="80"></div>
+        <div><label>PM10 DANGER</label><input type="number" id="t_pm10d" value="150"></div>
+        <div><label>IAQ WARNING</label><input type="number" id="t_iaqw" value="100"></div>
+        <div><label>IAQ DANGER</label><input type="number" id="t_iaqd" value="200"></div>
+        <div><label>CO2 WARNING ppm</label><input type="number" id="t_co2w" value="1000"></div>
+        <div><label>CO2 DANGER ppm</label><input type="number" id="t_co2d" value="2000"></div>
+        <div><label>TEMP HIGH &deg;C</label><input type="number" id="t_tmph" value="35"></div>
+        <div><label>HUMIDITY HIGH %</label><input type="number" id="t_humh" value="70"></div>
+      </div>
+      <p class="hint">Thresholds apply immediately and reset when the page reloads.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ API ============ -->
+<section class="page" id="api">
+  <div class="top">
+    <div><h2>Public API</h2><p>Any app or website can read AeroSense data over HTTPS. No login or key needed.</p></div>
+  </div>
+
+  <div class="panel">
+    <div class="ph"><div><h4>Endpoints</h4><p>Hosted by ThingSpeak. All responses are JSON unless noted.</p></div></div>
+    <div class="tw">
+      <table>
+        <thead><tr><th>REQUEST</th><th>RETURNS</th></tr></thead>
+        <tbody>
+          <tr><td><span class="mth">GET</span><code>/channels/3462136/feeds/last.json</code></td><td>Latest reading</td></tr>
+          <tr><td><span class="mth">GET</span><code>/channels/3462136/feeds.json?results=50</code></td><td>Last N readings (max 8000)</td></tr>
+          <tr><td><span class="mth">GET</span><code>/channels/3462136/fields/5.json?results=100</code></td><td>One field only (here: IAQ)</td></tr>
+          <tr><td><span class="mth">GET</span><code>/channels/3462136/feeds.json?start=2026-10-27%2000:00:00</code></td><td>Readings since a date (UTC)</td></tr>
+          <tr><td><span class="mth">GET</span><code>/channels/3462136/feeds.csv?results=8000</code></td><td>Same data as CSV</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hint">Base URL: <code style="color:#1d4ed8">https://api.thingspeak.com</code></p>
+  </div>
+
+  <div class="split">
+    <div class="panel">
+      <div class="ph"><div><h4>Fields</h4><p>Each reading has these keys.</p></div></div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>KEY</th><th>MEANING</th><th>UNIT</th></tr></thead>
+          <tbody>
+            <tr><td><code>created_at</code></td><td>Upload time</td><td>UTC</td></tr>
+            <tr><td><code>field1</code></td><td>Temperature</td><td>&deg;C</td></tr>
+            <tr><td><code>field2</code></td><td>Humidity</td><td>%</td></tr>
+            <tr><td><code>field3</code></td><td>Pressure</td><td>hPa</td></tr>
+            <tr><td><code>field4</code></td><td>Gas resistance</td><td>k&Omega;</td></tr>
+            <tr><td><code>field5</code></td><td>IAQ (estimated)</td><td>0&ndash;500</td></tr>
+            <tr><td><code>field6</code></td><td>CO2 equivalent</td><td>ppm</td></tr>
+            <tr><td><code>field7</code></td><td>PM2.5</td><td>&micro;g/m&sup3;</td></tr>
+            <tr><td><code>field8</code></td><td>PM10</td><td>&micro;g/m&sup3;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">field7 and field8 are empty when the PMS7003 is not connected.</p>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div><h4>Example</h4><p>Read the latest values from JavaScript or Python.</p></div></div>
+<div class="code"><span class="c">// JavaScript</span>
+const r = await fetch(
+  "https://api.thingspeak.com/channels/3462136/feeds/last.json");
+const d = await r.json();
+console.log("Temp:", d.field1, "IAQ:", d.field5);
+
+<span class="c"># Python</span>
+import requests
+d = requests.get(
+  "https://api.thingspeak.com/channels/3462136/feeds/last.json").json()
+print("Temp:", d["field1"], "IAQ:", d["field5"])</div>
+      <p class="hint">Try it now: <a href="https://api.thingspeak.com/channels/3462136/feeds/last.json" target="_blank" rel="noopener">open the latest reading</a></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+var CHANNEL=3462136;
+var FEED='https://api.thingspeak.com/channels/'+CHANNEL+'/feeds.json';
+var STALE=90;      // seconds without an upload before the device counts as offline (uploads are every 20 s)
+var KEEP=400;      // readings kept in memory for the chart and history table
+var D=null,hist=[],lastId=0,win=60,online=false;
+
+function go(id,btn){
+  var p=document.getElementsByClassName('page');
+  for(var i=0;i<p.length;i++)p[i].classList.remove('on');
+  document.getElementById(id).classList.add('on');
+  var b=document.querySelectorAll('.nav button');
+  for(var j=0;j<b.length;j++)b[j].classList.remove('on');
+  btn.classList.add('on');
+  if(id=='pm')draw();
+}
+
+function clock(){return new Date().toLocaleTimeString();}
+
+function when(d){
+  var today=new Date().toDateString()==d.toDateString();
+  return today?d.toLocaleTimeString():d.toLocaleDateString()+' '+d.toLocaleTimeString();
+}
+
+function ago(s){
+  if(s<60)return Math.round(s)+'s ago';
+  if(s<3600)return Math.floor(s/60)+' min ago';
+  if(s<86400)return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m ago';
+  return Math.floor(s/86400)+' days ago';
+}
+
+function iaqBand(v){
+  if(v<=50) return['Excellent','#22c55e','tg'];
+  if(v<=100)return['Good','#84cc16','tg'];
+  if(v<=150)return['Moderate','#fbbf24','ty'];
+  if(v<=200)return['Poor','#f97316','ty'];
+  if(v<=300)return['Very poor','#ef4444','tr'];
+  return['Severe','#b91c1c','tr'];
+}
+
+function set(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+function tag(id,txt,cls){var e=document.getElementById(id);if(!e)return;e.textContent=txt;e.className='tag '+cls;}
+function num(v){return v===null||v===undefined||v===''?null:+v;}
+function fx(v,d){return v===null?'-':v.toFixed(d);}
+
+// ThingSpeak entry -> reading. Field order matches uploadToThingSpeak() in AeroSense.ino.
+function toReading(f){
+  var iaq=num(f.field5);
+  return{
+    id:f.entry_id,t:new Date(f.created_at),
+    tmp:num(f.field1),hum:num(f.field2),pre:num(f.field3),gas:num(f.field4),
+    iaq:iaq,co2:num(f.field6),voc:iaq===null?null:iaq*0.006,
+    pm25:num(f.field7),pm10:num(f.field8)
+  };
+}
+
+async function pull(){
+  try{
+    // first load fetches a full window for the chart; after that only the newest entries
+    var r=await fetch(FEED+'?results='+(lastId?10:KEEP));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    var j=await r.json();
+    var added=false;
+    for(var i=0;i<j.feeds.length;i++){
+      var f=j.feeds[i];
+      if(f.entry_id>lastId&&f.field1!==null){hist.push(toReading(f));lastId=f.entry_id;added=true;}
+    }
+    if(hist.length>KEEP)hist=hist.slice(-KEEP);
+    if(!hist.length){showError('The channel has no readings yet.');return;}
+    D=hist[hist.length-1];
+    render();
+    if(added)paintHistory();
+  }catch(e){
+    showError('Cannot reach ThingSpeak. Check your internet connection.');
+  }
+}
+
+function showError(msg){
+  document.getElementById('pulse').classList.add('dead');
+  document.getElementById('conline').classList.add('off');
+  set('constat','No connection');
+  var b=document.getElementById('banner');
+  b.textContent=msg;b.classList.add('on');
+}
+
+function render(){
+  var age=(Date.now()-D.t)/1000;
+  online=age<STALE;
+
+  document.getElementById('pulse').classList.toggle('dead',!online);
+  document.getElementById('conline').classList.toggle('off',!online);
+  set('constat',online?'Device online':'Device offline');
+  set('sideago',ago(age));
+  set('dstat',online?'Online':'Offline');
+  set('lastup',when(D.t));
+  set('eago',ago(age));
+  set('eid',D.id);
+
+  var b=document.getElementById('banner');
+  if(online)b.classList.remove('on');
+  else{
+    b.textContent='The device has not uploaded for '+ago(age).replace(' ago','')+
+      '. Showing the last reading received ('+when(D.t)+'). Check that the ESP32 is powered and the hotspot has internet.';
+    b.classList.add('on');
+  }
+
+  // core
+  var t=D.tmp,h=D.hum;
+  set('tmp',fx(t,1));set('etmp',fx(t,1));
+  set('hum',fx(h,1));set('ehum',fx(h,1));
+  set('pre',fx(D.pre,1));set('epre',fx(D.pre,1));
+  set('gas',fx(D.gas,1));
+  set('co2',D.co2===null?'-':D.co2);set('eco2',D.co2===null?'-':D.co2);
+  set('voc',fx(D.voc,2));set('evoc',fx(D.voc,2));
+
+  // temp / humidity verdicts
+  if(t<18){tag('tmpt','Cool','tb');tag('etmpt','Cool','tb');}
+  else if(t<=30){tag('tmpt','Stable','tg');tag('etmpt','Stable','tg');}
+  else{tag('tmpt','Hot','tr');tag('etmpt','Hot','tr');}
+
+  if(h<30){tag('humt','Dry','ty');tag('ehumt','Dry','ty');}
+  else if(h<=60){tag('humt','Comfort','tg');tag('ehumt','Comfort','tg');}
+  else{tag('humt','Humid','ty');tag('ehumt','Humid','ty');}
+
+  tag('epret',D.pre>1013?'Above average':'Below average','tb');
+
+  // IAQ
+  var iq=Math.round(D.iaq||0),bd=iaqBand(iq);
+  set('iaqn',iq);set('eiaq',iq);
+  set('iaqword',bd[0]+' air quality');
+  set('iaqpill',bd[0]);
+  tag('eiaqt',bd[0],bd[2]);
+  var arc=document.getElementById('iaqarc');
+  arc.style.strokeDashoffset=396*(1-Math.min(iq,500)/500);
+  arc.style.stroke=bd[1];
+
+  // PM (field7/field8 are empty when the PMS7003 is disconnected)
+  var pmOk=D.pm25!==null;
+  set('pstat',pmOk?'Active':'No data');
+  set('pm25',pmOk?D.pm25:'--');set('pm25b',pmOk?D.pm25:'--');
+  set('pm10',D.pm10!==null?D.pm10:'--');set('pm10b',D.pm10!==null?D.pm10:'--');
+  if(pmOk){
+    var w=+document.getElementById('t_pm25w').value,dg=+document.getElementById('t_pm25d').value;
+    if(D.pm25>=dg){tag('pm25t','Unhealthy','tr');tag('pm25bt','Unhealthy','tr');}
+    else if(D.pm25>=w){tag('pm25t','Moderate','ty');tag('pm25bt','Moderate','ty');}
+    else{tag('pm25t','Good','tg');tag('pm25bt','Good','tg');}
+  }else{tag('pm25t','No data','tn');tag('pm25bt','No data','tn');}
+  if(D.pm10!==null){
+    var w10=+document.getElementById('t_pm10w').value;
+    if(D.pm10>=w10){tag('pm10t','Dust','tr');tag('pm10bt','Dust level','tr');}
+    else{tag('pm10t','Good','tg');tag('pm10bt','Good','tg');}
+  }else{tag('pm10t','No data','tn');tag('pm10bt','No data','tn');}
+
+  // comfort
+  var ct=100-Math.min(Math.abs(t-24)*6,60);
+  var ch=100-Math.min(Math.abs(h-45)*1.6,60);
+  var cs=Math.round(Math.max(0,(ct*0.5+ch*0.5)));
+  set('cmfn',cs+'%');
+  var carc=document.getElementById('cmfarc');
+  carc.style.strokeDashoffset=396*(1-cs/100);
+  if(cs>=75){carc.style.stroke='#16a34a';set('cmfw','Very comfortable');}
+  else if(cs>=50){carc.style.stroke='#fbbf24';set('cmfw','Acceptable');}
+  else{carc.style.stroke='#ef4444';set('cmfw','Uncomfortable');}
+
+  if(document.getElementById('pm').classList.contains('on'))draw();
+  buildAlerts();
+}
+
+/* ---------- chart ---------- */
+function setWin(n,b){
+  win=n;
+  var s=document.querySelectorAll('#pm .seg');
+  for(var i=0;i<s.length;i++)s[i].classList.remove('on');
+  b.classList.add('on');
+  draw();
+}
+
+function draw(){
+  var c=document.getElementById('chart');
+  var w=c.clientWidth,h=250;
+  c.width=w*2;c.height=h*2;
+  var x=c.getContext('2d');x.scale(2,2);
+  x.clearRect(0,0,w,h);
+
+  var d=hist.slice(-win);
+  if(d.length<2){
+    x.fillStyle='#94a3b8';x.font='12px sans-serif';x.textAlign='center';
+    x.fillText('Collecting data...',w/2,h/2);
+    return;
+  }
+
+  var pad=34,gw=w-pad-10,gh=h-30;
+  x.strokeStyle='#eef2f7';x.lineWidth=1;
+  for(var i=0;i<=4;i++){
+    var y=10+gh*i/4;
+    x.beginPath();x.moveTo(pad,y);x.lineTo(w-10,y);x.stroke();
+  }
+
+  function line(key,col,max){
+    x.beginPath();
+    for(var i=0;i<d.length;i++){
+      var px=pad+gw*i/(d.length-1);
+      var py=10+gh-(Math.min(d[i][key]||0,max)/max)*gh;
+      i?x.lineTo(px,py):x.moveTo(px,py);
+    }
+    x.strokeStyle=col;x.lineWidth=2.2;x.lineJoin='round';x.stroke();
+
+    x.lineTo(pad+gw,10+gh);x.lineTo(pad,10+gh);x.closePath();
+    var gr=x.createLinearGradient(0,10,0,10+gh);
+    gr.addColorStop(0,col+'33');gr.addColorStop(1,col+'00');
+    x.fillStyle=gr;x.fill();
+  }
+
+  var gmax=Math.max.apply(null,d.map(function(p){return p.gas||0}))*1.25||100;
+  line('gas','#22c55e',gmax);
+  line('iaq','#f97316',500);
+
+  x.fillStyle='#94a3b8';x.font='9px sans-serif';x.textAlign='right';
+  for(var i=0;i<=4;i++){
+    x.fillText(Math.round(gmax*(4-i)/4),pad-6,10+gh*i/4+3);
+  }
+  x.textAlign='left';
+  x.fillText(when(d[0].t),pad,h-4);
+  x.textAlign='right';
+  x.fillText(when(d[d.length-1].t),w-10,h-4);
+}
+
+/* ---------- history ---------- */
+function paintHistory(){
+  set('reccount',hist.length);
+  set('oldest',hist.length?when(hist[0].t):'--');
+  var s='';
+  for(var i=hist.length-1;i>=0;i--){
+    var r=hist[i];
+    s+='<tr><td>'+when(r.t)+'</td><td>#'+r.id+'</td><td>'+(r.pm25===null?'-':r.pm25)+'</td><td>'+(r.pm10===null?'-':r.pm10)+
+       '</td><td>'+fx(r.tmp,1)+'&deg;C</td><td>'+fx(r.hum,1)+'%</td><td>'+fx(r.pre,1)+'</td><td>'+(r.iaq===null?'-':Math.round(r.iaq))+
+       '</td><td>'+(r.co2===null?'-':r.co2)+'</td><td>'+fx(r.voc,2)+'</td><td>'+fx(r.gas,1)+'</td></tr>';
+  }
+  document.getElementById('logbody').innerHTML=s||'<tr><td colspan="11" class="empty">No readings yet.</td></tr>';
+}
+
+function exportCsv(){
+  if(!hist.length){alert('No readings loaded yet.');return;}
+  var c='Time (UTC),Entry,PM2.5,PM10,Temperature C,Humidity %,Pressure hPa,IAQ,CO2 ppm,VOC ppm,Gas kOhm\n';
+  for(var i=0;i<hist.length;i++){
+    var r=hist[i];
+    c+=[r.t.toISOString(),r.id,r.pm25===null?'':r.pm25,r.pm10===null?'':r.pm10,fx(r.tmp,2),fx(r.hum,2),fx(r.pre,2),
+        r.iaq===null?'':r.iaq,r.co2===null?'':r.co2,fx(r.voc,3),fx(r.gas,2)].join(',')+'\n';
+  }
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));
+  a.download=(document.getElementById('fname').value||'air_quality_log')+'.csv';
+  a.click();
+}
+
+/* ---------- alerts ---------- */
+function saveThr(){if(D)render();alert('Thresholds updated.');}
+
+function buildAlerts(){
+  var a=[],v=function(id){return +document.getElementById(id).value};
+  var iq=Math.round(D.iaq||0);
+
+  if(!online)a.push(['aw','&#128225;','Device offline','No upload for '+ago((Date.now()-D.t)/1000).replace(' ago','')+'. Alerts below use the last reading received.','Warning']);
+
+  if(iq>=v('t_iaqd'))a.push(['ax','&#9888;','Air quality is very poor','Estimated IAQ is '+iq+'. Ventilate the room.','Danger']);
+  else if(iq>=v('t_iaqw'))a.push(['aw','&#9888;','Air quality warning','Estimated IAQ is '+iq+'. Air is becoming unhealthy.','Warning']);
+
+  if(D.co2>=v('t_co2d'))a.push(['ax','&#9888;','CO2 very high','Estimated CO2 is '+D.co2+' ppm. Open a window.','Danger']);
+  else if(D.co2>=v('t_co2w'))a.push(['aw','&#9888;','CO2 rising','Estimated CO2 is '+D.co2+' ppm. Consider ventilating.','Warning']);
+
+  if(D.tmp>=v('t_tmph'))a.push(['aw','&#9728;','Temperature high',D.tmp.toFixed(1)+'&deg;C measured at the sensor.','Warning']);
+  if(D.hum>=v('t_humh'))a.push(['aw','&#9748;','Humidity high',D.hum.toFixed(1)+'% relative humidity.','Warning']);
+
+  if(D.pm25!==null){
+    if(D.pm25>=v('t_pm25d'))a.push(['ax','&#9888;','PM2.5 danger','PM2.5 is '+D.pm25+' &micro;g/m&sup3;.','Danger']);
+    else if(D.pm25>=v('t_pm25w'))a.push(['aw','&#9888;','PM2.5 warning','PM2.5 is '+D.pm25+' &micro;g/m&sup3;. Air is becoming unhealthy.','Warning']);
+  }else{
+    a.push(['ai_','&#9636;','No PM data','The PMS7003 did not send particulate readings with the last upload.','Info']);
+  }
+  if(D.pm10!==null){
+    if(D.pm10>=v('t_pm10d'))a.push(['ax','&#9888;','PM10 danger','PM10 is '+D.pm10+' &micro;g/m&sup3;.','Danger']);
+    else if(D.pm10>=v('t_pm10w'))a.push(['aw','&#9888;','PM10 warning','PM10 is '+D.pm10+' &micro;g/m&sup3;.','Warning']);
+  }
+
+  if(online)a.push(['ai_','&#128225;','Device online','The ESP32 is uploading to ThingSpeak about every 20 seconds.','Info']);
+
+  var warn=0,dang=0,s='';
+  for(var i=0;i<a.length;i++){
+    if(a[i][0]=='aw')warn++;
+    if(a[i][0]=='ax')dang++;
+    s+='<div class="al '+a[i][0]+'"><div class="ai">'+a[i][1]+'</div><div><div class="at">'+
+       a[i][2]+'</div><div class="ad">'+a[i][3]+'</div></div><div class="ab">'+a[i][4]+'</div></div>';
+  }
+  document.getElementById('allist').innerHTML=s;
+  set('alcount',warn+dang);
+  set('allevel',dang?'Danger':(warn?'Warning':'Normal'));
+  set('alcheck',clock());
+}
+
+/* ---------- boot ---------- */
+pull();
+setInterval(pull,15000);
+window.addEventListener('resize',function(){if(document.getElementById('pm').classList.contains('on'))draw()});
+</script>
+</body>
+</html>
